@@ -64,7 +64,8 @@ class UserStoryValidator(WatchersValidator, EditableWatchedResourceSerializer, v
     class Meta:
         model = models.UserStory
         depth = 0
-        read_only_fields = ('created_date', 'modified_date', 'owner')
+        read_only_fields = ('id', 'ref', 'created_date', 'modified_date', 'owner',
+                            'backlog_order', 'sprint_order', 'kanban_order')
 
 
 class UserStoriesBulkValidator(ProjectExistsValidator, UserStoryStatusExistsValidator,

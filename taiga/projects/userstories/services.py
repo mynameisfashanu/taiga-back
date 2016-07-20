@@ -28,9 +28,9 @@ from django.utils.translation import ugettext as _
 
 from taiga.base.utils import db, text
 from taiga.projects.history.services import take_snapshot
+from taiga.projects.services import apply_order_updates
 from taiga.projects.userstories.apps import connect_userstories_signals
 from taiga.projects.userstories.apps import disconnect_userstories_signals
-
 from taiga.events import events
 from taiga.projects.votes.utils import attach_total_voters_to_queryset
 from taiga.projects.notifications.utils import attach_watchers_to_queryset
@@ -77,16 +77,22 @@ def create_userstories_in_bulk(bulk_data, callback=None, precall=None, **additio
 
 def update_userstories_order_in_bulk(bulk_data: list, field: str, project: object):
     """
-    Update the order of some user stories.
-    `bulk_data` should be a list of tuples with the following format:
+    Updates the order of the userstories specified adding the extra updates needed
+    to keep consistency.
+    `bulk_data` should be a list of dicts with the following format:
+    `field` is the order field used
 
-    [(<user story id>, {<field>: <value>, ...}), ...]
+    [{'us_id': <value>, 'order': <value>}, ...]
     """
+    us_orders = {us.id: getattr(us, field) for us in project.user_stories.only("id", field)}
+    new_us_orders = {e["us_id"]: e["order"] for e in bulk_data}
+    apply_order_updates(us_orders, new_us_orders)
+
     user_story_ids = []
     new_order_values = []
-    for us_data in bulk_data:
-        user_story_ids.append(us_data["us_id"])
-        new_order_values.append({field: us_data["order"]})
+    for us_id in us_orders:
+        user_story_ids.append(us_id)
+        new_order_values.append({field: us_orders[us_id]})
 
     events.emit_event_for_ids(ids=user_story_ids,
                               content_type="userstories.userstory",
