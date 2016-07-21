@@ -140,10 +140,11 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
 
         if getattr(self, old_order_attr) != getattr(obj, order_attr):
             data = [{"us_id": obj.id, "order": getattr(obj, order_attr)}]
-            services.update_userstories_order_in_bulk(data,
-                                                      project=obj.project,
-                                                      field=order_attr)
-                                                      
+            order_updated = services.update_userstories_order_in_bulk(data,
+                                                                      project=obj.project,
+                                                                      field=order_attr)
+            self.headers["Taiga-Info-Order-Updated"] = order_updated
+
     def post_save(self, obj, created=False):
         if not created:
             self._reorder_if_needed(obj, "_old_backlog_order", "backlog_order")

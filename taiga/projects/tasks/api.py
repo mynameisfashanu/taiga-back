@@ -118,9 +118,10 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
     def _reorder_if_needed(self, obj, old_order_attr, order_attr):
         if getattr(self, old_order_attr) != getattr(obj, order_attr):
             data = [{"task_id": obj.id, "order": getattr(obj, order_attr)}]
-            services.update_tasks_order_in_bulk(data,
-                                                project=obj.project,
-                                                field=order_attr)
+            order_updated = services.update_tasks_order_in_bulk(data,
+                                                                project=obj.project,
+                                                                field=order_attr)
+            self.headers["Taiga-Info-Order-Updated"] = order_updated
 
     def post_save(self, obj, created=False):
         if not created:
