@@ -129,10 +129,26 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
 
         if not obj.id:
             obj.owner = self.request.user
+        else:
+            self._old_backlog_order = self.get_object().backlog_order
+            self._old_kanban_order = self.get_object().kanban_order
+            self._old_sprint_order = self.get_object().sprint_order
 
         super().pre_save(obj)
 
+    def _reorder_if_needed(self, obj, old_order_attr, order_attr):
+        if getattr(self, old_order_attr) != getattr(obj, order_attr):
+            data = [{"us_id": obj.id, "order": getattr(obj, order_attr)}]
+            services.update_userstories_order_in_bulk(data,
+                                                      project=obj.project,
+                                                      field=order_attr)
+
     def post_save(self, obj, created=False):
+        if not created:
+            self._reorder_if_needed(obj, "_old_backlog_order", "backlog_order")
+            self._reorder_if_needed(obj, "_old_kanban_order", "kanban_order")
+            self._reorder_if_needed(obj, "_old_sprint_order", "sprint_order")
+
         # Code related to the hack of pre_save method.
         # Rather, this is the continuation of it.
         if self._role_points:

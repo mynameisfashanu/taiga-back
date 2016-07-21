@@ -45,8 +45,7 @@ class TaskValidator(WatchersValidator, EditableWatchedResourceSerializer, valida
 
     class Meta:
         model = models.Task
-        read_only_fields = ('id', 'ref', 'created_date', 'modified_date', 'owner',
-                            'us_order', 'taskboard_order')
+        read_only_fields = ('id', 'ref', 'created_date', 'modified_date', 'owner')
 
 
 class TasksBulkValidator(ProjectExistsValidator, MilestoneExistsValidator,

@@ -103,3 +103,18 @@ def test_apply_order_updates_multiple_elements_forward():
         "e": 7,
         "f": 8
     }
+
+def test_apply_order_updates_no_effect():
+    orders = {
+        "a": 1,
+        "b": 2,
+        "c": 3,
+        "d": 4,
+        "e": 5,
+        "f": 6
+    }
+    new_orders = {
+        "a": 1
+    }
+    apply_order_updates(orders, new_orders)
+    assert orders == {}

@@ -109,7 +109,18 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
             obj.milestone = obj.user_story.milestone
         if not obj.id:
             obj.owner = self.request.user
+        else:
+            self._old_us_order = self.get_object().us_order
+            self._old_taskboard_order = self.get_object().taskboard_order
+
         super().pre_save(obj)
+
+    def post_save(self, obj, created=False):
+        if not created:
+            self._reorder_if_needed(obj, "_old_us_order", "us_order")
+            self._reorder_if_needed(obj, "_old_taskboard_order", "taskboard_order")
+
+        super().post_save(obj, created)
 
     def update(self, request, *args, **kwargs):
         self.object = self.get_object_or_none()

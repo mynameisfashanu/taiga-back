@@ -54,8 +54,9 @@ def apply_order_updates(base_orders: dict, new_orders: dict):
 
     # Overwritting the orders specified
     for id, order in new_orders.items():
-        base_orders[id] = order
-        updated_order_ids.add(id)
+        if base_orders[id] != order:
+            base_orders[id] = order
+            updated_order_ids.add(id)
 
     # Remove not modified elements
     removing_keys = [id for id in base_orders if id not in updated_order_ids]
