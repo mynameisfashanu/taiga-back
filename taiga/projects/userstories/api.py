@@ -137,12 +137,13 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
         super().pre_save(obj)
 
     def _reorder_if_needed(self, obj, old_order_attr, order_attr):
+
         if getattr(self, old_order_attr) != getattr(obj, order_attr):
             data = [{"us_id": obj.id, "order": getattr(obj, order_attr)}]
             services.update_userstories_order_in_bulk(data,
                                                       project=obj.project,
                                                       field=order_attr)
-
+                                                      
     def post_save(self, obj, created=False):
         if not created:
             self._reorder_if_needed(obj, "_old_backlog_order", "backlog_order")
