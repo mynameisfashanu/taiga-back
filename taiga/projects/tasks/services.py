@@ -96,7 +96,7 @@ def update_tasks_order_in_bulk(bulk_data: list, field: str, project: object):
                               projectid=project.pk)
 
     db.update_in_bulk_with_ids(task_ids, new_order_values, model=models.Task)
-
+    return task_orders
 
 def snapshot_tasks_in_bulk(bulk_data, user):
     for task_data in bulk_data:

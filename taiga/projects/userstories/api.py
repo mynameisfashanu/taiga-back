@@ -316,12 +316,12 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
         if project.blocked_code is not None:
             raise exc.Blocked(_("Blocked element"))
 
-        services.update_userstories_order_in_bulk(data["bulk_stories"],
-                                                  project=project,
-                                                  field=order_field)
+        ret = services.update_userstories_order_in_bulk(data["bulk_stories"],
+                                                        project=project,
+                                                        field=order_field)
         services.snapshot_userstories_in_bulk(data["bulk_stories"], request.user)
 
-        return response.NoContent()
+        return response.Ok(ret)
 
     @list_route(methods=["POST"])
     def bulk_update_backlog_order(self, request, **kwargs):

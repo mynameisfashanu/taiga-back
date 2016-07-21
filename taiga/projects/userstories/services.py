@@ -99,7 +99,7 @@ def update_userstories_order_in_bulk(bulk_data: list, field: str, project: objec
                               projectid=project.pk)
 
     db.update_in_bulk_with_ids(user_story_ids, new_order_values, model=models.UserStory)
-
+    return us_orders
 
 def update_userstories_milestone_in_bulk(bulk_data: list, milestone: object):
     """

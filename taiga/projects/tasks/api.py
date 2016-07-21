@@ -234,12 +234,12 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
         if project.blocked_code is not None:
             raise exc.Blocked(_("Blocked element"))
 
-        services.update_tasks_order_in_bulk(data["bulk_tasks"],
-                                            project=project,
-                                            field=order_field)
+        ret = services.update_tasks_order_in_bulk(data["bulk_tasks"],
+                                                  project=project,
+                                                  field=order_field)
         services.snapshot_tasks_in_bulk(data["bulk_tasks"], request.user)
 
-        return response.NoContent()
+        return response.Ok(ret)
 
     @list_route(methods=["POST"])
     def bulk_update_taskboard_order(self, request, **kwargs):
