@@ -74,14 +74,25 @@ def create_tasks_in_bulk(bulk_data, callback=None, precall=None, **additional_fi
     return tasks
 
 
-def update_tasks_order_in_bulk(bulk_data: list, field: str, project: object):
+def update_tasks_order_in_bulk(bulk_data: list, field: str, project: object,
+                               user_story: object=None, status: object=None, milestone: object=None):
     """
     Updates the order of the tasks specified adding the extra updates needed
     to keep consistency.
 
     [{'task_id': <value>, 'order': <value>}, ...]
     """
-    task_orders = {task.id: getattr(task, field) for task in project.tasks.only("id", field)}
+    tasks = project.tasks
+    if user_story is not None:
+        tasks = tasks.filter(user_story=user_story)
+    if status is not None:
+        tasks = tasks.filter(status=status)
+    if milestone is not None:
+        tasks = tasks.filter(milestone=milestone)
+
+    print("------------", tasks)
+
+    task_orders = {task.id: getattr(task, field) for task in tasks.only("id", field)}
     new_task_orders = {e["task_id"]: e["order"] for e in bulk_data}
     apply_order_updates(task_orders, new_task_orders)
 

@@ -118,6 +118,21 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
             raise exc.PermissionDenied(_("You don't have permissions to set this status "
                                          "to this user story."))
 
+    """
+    Updating some attributes of the userstory can affect the ordering in the backlog, kanban or taskboard
+    These three methods generate a key for the user story and can be used to be compared before and after
+    saving
+    If there is any difference it means an extra ordering update must be done
+    """
+    def _backlog_order_key(self, obj):
+        return "{}-{}".format(obj.project_id, obj.backlog_order)
+
+    def _kanban_order_key(self, obj):
+        return "{}-{}-{}".format(obj.project_id, obj.status_id, obj.kanban_order)
+
+    def _sprint_order_key(self, obj):
+        return "{}-{}-{}".format(obj.project_id, obj.milestone_id, obj.sprint_order)
+
     def pre_save(self, obj):
         # This is very ugly hack, but having
         # restframework is the only way to do it.
@@ -130,26 +145,43 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
         if not obj.id:
             obj.owner = self.request.user
         else:
-            self._old_backlog_order = self.get_object().backlog_order
-            self._old_kanban_order = self.get_object().kanban_order
-            self._old_sprint_order = self.get_object().sprint_order
+            self._old_backlog_order_key = self._backlog_order_key(self.get_object())
+            self._old_kanban_order_key = self._kanban_order_key(self.get_object())
+            self._old_sprint_order_key = self._sprint_order_key(self.get_object())
 
         super().pre_save(obj)
 
-    def _reorder_if_needed(self, obj, old_order_attr, order_attr):
-
-        if getattr(self, old_order_attr) != getattr(obj, order_attr):
+    def _reorder_if_needed(self, obj, old_order_key, order_key, order_attr,
+                           project, status=None, milestone=None):
+        # Executes the extra ordering if there is a difference in the  ordering keys
+        if old_order_key != order_key:
             data = [{"us_id": obj.id, "order": getattr(obj, order_attr)}]
             order_updated = services.update_userstories_order_in_bulk(data,
-                                                                      project=obj.project,
-                                                                      field=order_attr)
+                                                                      order_attr,
+                                                                      project,
+                                                                      status=status,
+                                                                      milestone=milestone)
             self.headers["Taiga-Info-Order-Updated"] = order_updated
 
     def post_save(self, obj, created=False):
         if not created:
-            self._reorder_if_needed(obj, "_old_backlog_order", "backlog_order")
-            self._reorder_if_needed(obj, "_old_kanban_order", "kanban_order")
-            self._reorder_if_needed(obj, "_old_sprint_order", "sprint_order")
+            self._reorder_if_needed(obj,
+                                    self._old_backlog_order_key,
+                                    self._backlog_order_key(obj),
+                                    "backlog_order",
+                                    obj.project)
+            self._reorder_if_needed(obj,
+                                    self._old_kanban_order_key,
+                                    self._kanban_order_key(obj),
+                                    "kanban_order",
+                                    obj.project,
+                                    status=obj.status)
+            self._reorder_if_needed(obj,
+                                    self._old_sprint_order_key,
+                                    self._sprint_order_key(obj),
+                                    "sprint_order",
+                                    obj.project,
+                                    milestone=obj.milestone)
 
         # Code related to the hack of pre_save method.
         # Rather, this is the continuation of it.

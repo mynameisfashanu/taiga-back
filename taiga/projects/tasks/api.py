@@ -104,29 +104,57 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
         if obj.milestone and obj.user_story and obj.milestone != obj.user_story.milestone:
             raise exc.WrongArguments(_("You don't have permissions to set this sprint to this task."))
 
+    """
+    Updating some attributes of the userstory can affect the ordering in the backlog, kanban or taskboard
+    These three methods generate a key for the user story and can be used to be compared before and after
+    saving
+    If there is any difference it means an extra ordering update must be done
+    """
+    def _us_order_key(self, obj):
+        return "{}-{}-{}".format(obj.project_id, obj.user_story_id, obj.us_order)
+
+    def _taskboard_order_key(self, obj):
+        return "{}-{}-{}".format(obj.project_id, obj.user_story_id, obj.status_id, obj.taskboard_order)
+
     def pre_save(self, obj):
         if obj.user_story:
             obj.milestone = obj.user_story.milestone
         if not obj.id:
             obj.owner = self.request.user
         else:
-            self._old_us_order = self.get_object().us_order
-            self._old_taskboard_order = self.get_object().taskboard_order
+            self._old_us_order_key = self._us_order_key(self.get_object())
+            self._old_taskboard_order_key = self._taskboard_order_key(self.get_object())
 
         super().pre_save(obj)
 
-    def _reorder_if_needed(self, obj, old_order_attr, order_attr):
-        if getattr(self, old_order_attr) != getattr(obj, order_attr):
+    def _reorder_if_needed(self, obj, old_order_key, order_key, order_attr,
+                           project, user_story=None, status=None, milestone=None):
+        # Executes the extra ordering if there is a difference in the  ordering keys
+        if old_order_key != order_key:
             data = [{"task_id": obj.id, "order": getattr(obj, order_attr)}]
             order_updated = services.update_tasks_order_in_bulk(data,
-                                                                project=obj.project,
-                                                                field=order_attr)
+                                                                order_attr,
+                                                                project,
+                                                                user_story=user_story,
+                                                                status=status,
+                                                                milestone=milestone)
+
             self.headers["Taiga-Info-Order-Updated"] = order_updated
 
     def post_save(self, obj, created=False):
         if not created:
-            self._reorder_if_needed(obj, "_old_us_order", "us_order")
-            self._reorder_if_needed(obj, "_old_taskboard_order", "taskboard_order")
+            self._reorder_if_needed(obj,
+                                    self._old_us_order_key,
+                                    self._us_order_key(obj),
+                                    "us_order",
+                                    obj.project,
+                                    user_story=obj.user_story)
+            self._reorder_if_needed(obj,
+                                    self._old_taskboard_order_key,
+                                    self._taskboard_order_key(obj),
+                                    "taskboard_order",
+                                    obj.project,
+                                    user_story=obj.user_story, status=obj.status, milestone=obj.milestone)
 
         super().post_save(obj, created)
 

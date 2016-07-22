@@ -75,7 +75,8 @@ def create_userstories_in_bulk(bulk_data, callback=None, precall=None, **additio
     return userstories
 
 
-def update_userstories_order_in_bulk(bulk_data: list, field: str, project: object):
+def update_userstories_order_in_bulk(bulk_data: list, field: str, project: object,
+                                     status: object=None, milestone: object=None):
     """
     Updates the order of the userstories specified adding the extra updates needed
     to keep consistency.
@@ -84,7 +85,13 @@ def update_userstories_order_in_bulk(bulk_data: list, field: str, project: objec
 
     [{'us_id': <value>, 'order': <value>}, ...]
     """
-    us_orders = {us.id: getattr(us, field) for us in project.user_stories.only("id", field)}
+    user_stories = project.user_stories
+    if status is not None:
+        user_stories = user_stories.filter(status=status)
+    if milestone is not None:
+        user_stories = user_stories.filter(sprint=milestone)
+
+    us_orders = {us.id: getattr(us, field) for us in user_stories.only("id", field)}
     new_us_orders = {e["us_id"]: e["order"] for e in bulk_data}
     apply_order_updates(us_orders, new_us_orders)
 
