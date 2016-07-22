@@ -95,17 +95,35 @@ def update_userstories_order_in_bulk(bulk_data: list, field: str, project: objec
     new_us_orders = {e["us_id"]: e["order"] for e in bulk_data}
     apply_order_updates(us_orders, new_us_orders)
 
+    """
     user_story_ids = []
     new_order_values = []
     for us_id in us_orders:
         user_story_ids.append(us_id)
         new_order_values.append({field: us_orders[us_id]})
+    """
 
+    user_story_ids = us_orders.keys()
     events.emit_event_for_ids(ids=user_story_ids,
                               content_type="userstories.userstory",
                               projectid=project.pk)
+    # db.update_in_bulk_with_ids(user_story_ids, new_order_values, model=models.UserStory)
 
-    db.update_in_bulk_with_ids(user_story_ids, new_order_values, model=models.UserStory)
+    # TODO:
+    values = [str((id, order)) for id, order in us_orders.items()]
+    sql = """
+    UPDATE userstories_userstory
+    SET backlog_order=update_orders.column2
+    FROM (
+      VALUES
+        {}
+    ) AS update_orders
+    WHERE userstories_userstory.id=update_orders.column1;
+    """.format(', '.join(values))
+
+    from django.db import connection
+    cursor = connection.cursor()
+    cursor.execute(sql)
     return us_orders
 
 def update_userstories_milestone_in_bulk(bulk_data: list, milestone: object):
