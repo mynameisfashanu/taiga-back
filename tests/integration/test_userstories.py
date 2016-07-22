@@ -176,9 +176,9 @@ def test_api_update_orders_in_bulk(client):
     response2 = client.json.post(url2, json.dumps(data))
     response3 = client.json.post(url3, json.dumps(data))
 
-    assert response1.status_code == 204, response1.data
-    assert response2.status_code == 204, response2.data
-    assert response3.status_code == 204, response3.data
+    assert response1.status_code == 200, response1.data
+    assert response2.status_code == 200, response2.data
+    assert response3.status_code == 200, response3.data
 
 
 def test_api_update_milestone_in_bulk(client):
