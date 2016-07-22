@@ -289,7 +289,7 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
             milestone = get_object_or_404(Milestone, pk=milestone_id)
 
         ret = services.update_tasks_order_in_bulk(data["bulk_tasks"],
-                                                  order_field.
+                                                  order_field,
                                                   project,
                                                   user_story=user_story,
                                                   status=status,
