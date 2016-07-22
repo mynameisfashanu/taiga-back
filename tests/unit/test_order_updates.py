@@ -118,3 +118,17 @@ def test_apply_order_updates_no_effect():
     }
     apply_order_updates(orders, new_orders)
     assert orders == {}
+
+def test_apply_order_updates_two_elements():
+    orders = {
+        "a": 0,
+        "b": 1,
+    }
+    new_orders = {
+        "b": 0
+    }
+    apply_order_updates(orders, new_orders)
+    assert orders == {
+        "b": 0,
+        "a": 1
+    }

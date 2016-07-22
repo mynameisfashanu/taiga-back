@@ -89,7 +89,7 @@ def update_userstories_order_in_bulk(bulk_data: list, field: str, project: objec
     if status is not None:
         user_stories = user_stories.filter(status=status)
     if milestone is not None:
-        user_stories = user_stories.filter(sprint=milestone)
+        user_stories = user_stories.filter(milestone=milestone)
 
     us_orders = {us.id: getattr(us, field) for us in user_stories.only("id", field)}
     new_us_orders = {e["us_id"]: e["order"] for e in bulk_data}

@@ -90,6 +90,9 @@ def update_tasks_order_in_bulk(bulk_data: list, field: str, project: object,
     if milestone is not None:
         tasks = tasks.filter(milestone=milestone)
 
+
+    print("XXXXXX", tasks)
+
     task_orders = {task.id: getattr(task, field) for task in tasks.only("id", field)}
     new_task_orders = {e["task_id"]: e["order"] for e in bulk_data}
     apply_order_updates(task_orders, new_task_orders)

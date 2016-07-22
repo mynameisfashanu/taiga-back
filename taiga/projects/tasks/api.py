@@ -117,7 +117,7 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
         return "{}-{}-{}".format(obj.project_id, obj.user_story_id, obj.us_order)
 
     def _taskboard_order_key(self, obj):
-        return "{}-{}-{}".format(obj.project_id, obj.user_story_id, obj.status_id, obj.taskboard_order)
+        return "{}-{}-{}-{}".format(obj.project_id, obj.user_story_id, obj.status_id, obj.taskboard_order)
 
     def pre_save(self, obj):
         if obj.user_story:

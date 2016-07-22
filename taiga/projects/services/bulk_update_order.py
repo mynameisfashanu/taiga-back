@@ -45,9 +45,9 @@ def apply_order_updates(base_orders: dict, new_orders: dict):
         for id, order in base_orders.items():
             # When moving forward only the elements contained in the range new_order - old_order
             # positions need to be updated
-            moving_backward = new_order < old_order and order >= new_order and order < old_order
+            moving_backward = new_order <= old_order and order >= new_order and order < old_order
             # When moving backward all the elements from the new_order position need to bee updated
-            moving_forward = new_order > old_order and order >= new_order
+            moving_forward = new_order >= old_order and order >= new_order
             if moving_backward or moving_forward:
                 base_orders[id] += 1
                 updated_order_ids.add(id)
