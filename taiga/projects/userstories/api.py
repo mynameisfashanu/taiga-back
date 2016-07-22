@@ -345,16 +345,26 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
 
         data = validator.data
         project = get_object_or_404(Project, pk=data["project_id"])
+        status = None
+        status_id = data.get("status_id", None)
+        if status_id is not None:
+            status = get_object_or_404(UserStoryStatus, pk=status_id)
+
+        milestone = None
+        milestone_id = data.get("milestone_id", None)
+        if milestone_id is not None:
+            milestone = get_object_or_404(Milestone, pk=milestone_id)
 
         self.check_permissions(request, "bulk_update_order", project)
         if project.blocked_code is not None:
             raise exc.Blocked(_("Blocked element"))
 
         ret = services.update_userstories_order_in_bulk(data["bulk_stories"],
-                                                        project=project,
-                                                        field=order_field)
+                                                        order_field,
+                                                        project,
+                                                        status=status,
+                                                        milestone=milestone)
         services.snapshot_userstories_in_bulk(data["bulk_stories"], request.user)
-
         return response.Ok(ret)
 
     @list_route(methods=["POST"])

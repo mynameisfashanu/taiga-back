@@ -27,10 +27,13 @@ from taiga.base.api import ModelCrudViewSet, ModelListViewSet
 from taiga.base.api.mixins import BlockedByProjectMixin
 
 from taiga.projects.history.mixins import HistoryResourceMixin
+from taiga.projects.milestones.models import Milestone
 from taiga.projects.models import Project, TaskStatus
 from taiga.projects.notifications.mixins import WatchedResourceMixin, WatchersViewSetMixin
 from taiga.projects.occ import OCCResourceMixin
 from taiga.projects.tagging.api import TaggedResourceMixin
+from taiga.projects.userstories.models import UserStory
+
 from taiga.projects.votes.mixins.viewsets import VotedResourceMixin, VotersViewSetMixin
 
 from . import models
@@ -270,9 +273,27 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
         if project.blocked_code is not None:
             raise exc.Blocked(_("Blocked element"))
 
+        user_story = None
+        user_story_id = data.get("user_story_id", None)
+        if user_story_id is not None:
+            user_story = get_object_or_404(UserStory, pk=user_story_id)
+
+        status = None
+        status_id = data.get("status_id", None)
+        if status_id is not None:
+            status = get_object_or_404(TaskStatus, pk=status_id)
+
+        milestone = None
+        milestone_id = data.get("milestone_id", None)
+        if milestone_id is not None:
+            milestone = get_object_or_404(Milestone, pk=milestone_id)
+
         ret = services.update_tasks_order_in_bulk(data["bulk_tasks"],
-                                                  project=project,
-                                                  field=order_field)
+                                                  order_field.
+                                                  project,
+                                                  user_story=user_story,
+                                                  status=status,
+                                                  milestone=milestone)
         services.snapshot_tasks_in_bulk(data["bulk_tasks"], request.user)
 
         return response.Ok(ret)

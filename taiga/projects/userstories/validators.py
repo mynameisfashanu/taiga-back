@@ -84,6 +84,8 @@ class _UserStoryOrderBulkValidator(UserStoryExistsValidator, validators.Validato
 class UpdateUserStoriesOrderBulkValidator(ProjectExistsValidator, UserStoryStatusExistsValidator,
                                           validators.Validator):
     project_id = serializers.IntegerField()
+    status_id = serializers.IntegerField(required=False)
+    milestone_id = serializers.IntegerField(required=False)
     bulk_stories = _UserStoryOrderBulkValidator(many=True)
 
 
