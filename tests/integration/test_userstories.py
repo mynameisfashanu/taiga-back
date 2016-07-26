@@ -57,10 +57,9 @@ def test_update_userstories_order_in_bulk():
 
     with mock.patch("taiga.projects.userstories.services.db") as db:
         services.update_userstories_order_in_bulk(data, "backlog_order", project)
-        db.update_in_bulk_with_ids.assert_called_once_with([us1.id, us2.id],
-                                                           [{"backlog_order": 1},
-                                                            {"backlog_order": 2}],
-                                                           model=models.UserStory)
+        db.update_attr_in_bulk_for_ids.assert_called_once_with({us1.id: 1, us2.id: 2},
+                                                                "backlog_order",
+                                                                models.UserStory)
 
 
 def test_create_userstory_with_watchers(client):

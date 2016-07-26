@@ -115,7 +115,7 @@ def update_userstories_milestone_in_bulk(bulk_data: list, milestone: object):
                               content_type="userstories.userstory",
                               projectid=milestone.project.pk)
 
-    db.update_attr_in_bulk_for_ids(us_milestones, "milestone", model=models.UserStory)
+    db.update_attr_in_bulk_for_ids(us_milestones, "milestone_id", model=models.UserStory)
 
 
 def snapshot_userstories_in_bulk(bulk_data, user):
