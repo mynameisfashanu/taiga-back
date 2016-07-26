@@ -154,18 +154,24 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
 
     def _reorder_if_needed(self, obj, old_order_key, order_key, order_attr,
                            project, status=None, milestone=None):
+
         # Executes the extra ordering if there is a difference in the  ordering keys
         if old_order_key != order_key:
+            extra_orders = self.request.META.get("HTTP_SET_ORDERS", "{}")
             data = [{"us_id": obj.id, "order": getattr(obj, order_attr)}]
+            for id, order in extra_orders.items():
+                data.append({"us_id": id, "order": order})
+
             order_updated = services.update_userstories_order_in_bulk(data,
                                                                       order_attr,
                                                                       project,
                                                                       status=status,
                                                                       milestone=milestone)
-            self.headers["Taiga-Info-Order-Updated"] = json.dumps(order_updated)
+            self.headers["Taiga-Info-Order-Updated"].update(json.dumps(order_updated))
 
     def post_save(self, obj, created=False):
         if not created:
+            self.headers["Taiga-Info-Order-Updated"] = {}
             self._reorder_if_needed(obj,
                                     self._old_backlog_order_key,
                                     self._backlog_order_key(obj),
@@ -231,6 +237,7 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
     def update(self, request, *args, **kwargs):
         self.object = self.get_object_or_none()
         project_id = request.DATA.get('project', None)
+
         if project_id and self.object and self.object.project.id != project_id:
             try:
                 new_project = Project.objects.get(pk=project_id)

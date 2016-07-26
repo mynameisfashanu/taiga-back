@@ -134,17 +134,22 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
                            project, user_story=None, status=None, milestone=None):
         # Executes the extra ordering if there is a difference in the  ordering keys
         if old_order_key != order_key:
+            extra_orders = self.request.META.get("HTTP_SET_ORDERS", "{}")
             data = [{"task_id": obj.id, "order": getattr(obj, order_attr)}]
+            for id, order in extra_orders.items():
+                data.append({"us_id": id, "order": order})
+                
             order_updated = services.update_tasks_order_in_bulk(data,
                                                                 order_attr,
                                                                 project,
                                                                 user_story=user_story,
                                                                 status=status,
                                                                 milestone=milestone)
-            self.headers["Taiga-Info-Order-Updated"] = json.dumps(order_updated)
+            self.headers["Taiga-Info-Order-Updated"].update(json.dumps(order_updated))
 
     def post_save(self, obj, created=False):
         if not created:
+            self.headers["Taiga-Info-Order-Updated"] = {}
             self._reorder_if_needed(obj,
                                     self._old_us_order_key,
                                     self._us_order_key(obj),
@@ -163,6 +168,7 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
     def update(self, request, *args, **kwargs):
         self.object = self.get_object_or_none()
         project_id = request.DATA.get('project', None)
+
         if project_id and self.object and self.object.project.id != project_id:
             try:
                 new_project = Project.objects.get(pk=project_id)

@@ -104,21 +104,6 @@ def test_apply_order_updates_multiple_elements_forward():
         "f": 8
     }
 
-def test_apply_order_updates_no_effect():
-    orders = {
-        "a": 1,
-        "b": 2,
-        "c": 3,
-        "d": 4,
-        "e": 5,
-        "f": 6
-    }
-    new_orders = {
-        "a": 1
-    }
-    apply_order_updates(orders, new_orders)
-    assert orders == {}
-
 def test_apply_order_updates_two_elements():
     orders = {
         "a": 0,
@@ -131,4 +116,50 @@ def test_apply_order_updates_two_elements():
     assert orders == {
         "b": 0,
         "a": 1
+    }
+
+def test_apply_order_updates_duplicated_orders():
+    orders = {
+        "a": 1,
+        "b": 2,
+        "c": 3,
+        "d": 3,
+        "e": 3,
+        "f": 4
+    }
+    new_orders = {
+        "a": 3
+    }
+    apply_order_updates(orders, new_orders)
+    print(orders)
+    assert orders == {
+        "a": 3,
+        "c": 4,
+        "d": 4,
+        "e": 4,
+        "f": 5
+    }
+
+def test_apply_order_updates_multiple_elements_duplicated_orders():
+    orders = {
+        "a": 1,
+        "b": 2,
+        "c": 3,
+        "d": 3,
+        "e": 3,
+        "f": 4
+    }
+    new_orders = {
+        "c": 3,
+        "d": 3,
+        "a": 4
+    }
+    apply_order_updates(orders, new_orders)
+    print(orders)
+    assert orders == {
+        "c": 3,
+        "d": 3,
+        "a": 4,
+        "e": 5,
+        "f": 6
     }

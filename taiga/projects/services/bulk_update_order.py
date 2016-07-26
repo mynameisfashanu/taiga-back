@@ -39,6 +39,7 @@ def apply_order_updates(base_orders: dict, new_orders: dict):
     # We will apply the multiple order changes by the new position order
     sorted_new_orders = [(k, v) for k, v in new_orders.items()]
     sorted_new_orders = sorted(sorted_new_orders, key=lambda e: e[1])
+
     for new_order in sorted_new_orders:
         old_order = base_orders[new_order[0]]
         new_order = new_order[1]
