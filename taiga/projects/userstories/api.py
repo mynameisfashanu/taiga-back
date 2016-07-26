@@ -31,6 +31,7 @@ from taiga.base.api.mixins import BlockedByProjectMixin
 from taiga.base.api import ModelCrudViewSet
 from taiga.base.api import ModelListViewSet
 from taiga.base.api.utils import get_object_or_404
+from taiga.base.utils import json
 
 from taiga.projects.history.mixins import HistoryResourceMixin
 from taiga.projects.history.services import take_snapshot
@@ -161,7 +162,7 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
                                                                       project,
                                                                       status=status,
                                                                       milestone=milestone)
-            self.headers["Taiga-Info-Order-Updated"] = order_updated
+            self.headers["Taiga-Info-Order-Updated"] = json.dumps(order_updated)
 
     def post_save(self, obj, created=False):
         if not created:

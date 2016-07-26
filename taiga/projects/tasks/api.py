@@ -25,7 +25,7 @@ from taiga.base import exceptions as exc
 from taiga.base.decorators import list_route
 from taiga.base.api import ModelCrudViewSet, ModelListViewSet
 from taiga.base.api.mixins import BlockedByProjectMixin
-
+from taiga.base.utils import json
 from taiga.projects.history.mixins import HistoryResourceMixin
 from taiga.projects.milestones.models import Milestone
 from taiga.projects.models import Project, TaskStatus
@@ -141,8 +141,7 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
                                                                 user_story=user_story,
                                                                 status=status,
                                                                 milestone=milestone)
-
-            self.headers["Taiga-Info-Order-Updated"] = order_updated
+            self.headers["Taiga-Info-Order-Updated"] = json.dumps(order_updated)
 
     def post_save(self, obj, created=False):
         if not created:
