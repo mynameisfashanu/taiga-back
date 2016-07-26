@@ -134,34 +134,40 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
                            project, user_story=None, status=None, milestone=None):
         # Executes the extra ordering if there is a difference in the  ordering keys
         if old_order_key != order_key:
-            extra_orders = self.request.META.get("HTTP_SET_ORDERS", "{}")
+            extra_orders = json.loads(self.request.META.get("HTTP_SET_ORDERS", "{}"))
             data = [{"task_id": obj.id, "order": getattr(obj, order_attr)}]
             for id, order in extra_orders.items():
                 data.append({"us_id": id, "order": order})
-                
-            order_updated = services.update_tasks_order_in_bulk(data,
-                                                                order_attr,
-                                                                project,
-                                                                user_story=user_story,
-                                                                status=status,
-                                                                milestone=milestone)
-            self.headers["Taiga-Info-Order-Updated"].update(json.dumps(order_updated))
+
+            return services.update_tasks_order_in_bulk(data,
+                                                       order_attr,
+                                                       project,
+                                                       user_story=user_story,
+                                                       status=status,
+                                                       milestone=milestone)
+
+        return {}
 
     def post_save(self, obj, created=False):
         if not created:
-            self.headers["Taiga-Info-Order-Updated"] = {}
-            self._reorder_if_needed(obj,
-                                    self._old_us_order_key,
-                                    self._us_order_key(obj),
-                                    "us_order",
-                                    obj.project,
-                                    user_story=obj.user_story)
-            self._reorder_if_needed(obj,
-                                    self._old_taskboard_order_key,
-                                    self._taskboard_order_key(obj),
-                                    "taskboard_order",
-                                    obj.project,
-                                    user_story=obj.user_story, status=obj.status, milestone=obj.milestone)
+            orders_updated = {}
+            updated = self._reorder_if_needed(obj,
+                                              self._old_us_order_key,
+                                              self._us_order_key(obj),
+                                              "us_order",
+                                              obj.project,
+                                              user_story=obj.user_story)
+            orders_updated.update(updated)
+            updated = self._reorder_if_needed(obj,
+                                              self._old_taskboard_order_key,
+                                              self._taskboard_order_key(obj),
+                                              "taskboard_order",
+                                              obj.project,
+                                              user_story=obj.user_story,
+                                              status=obj.status,
+                                              milestone=obj.milestone)
+            orders_updated.update(updated)
+            self.headers["Taiga-Info-Order-Updated"] = json.dumps(orders_updated)
 
         super().post_save(obj, created)
 

@@ -157,38 +157,43 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
 
         # Executes the extra ordering if there is a difference in the  ordering keys
         if old_order_key != order_key:
-            extra_orders = self.request.META.get("HTTP_SET_ORDERS", "{}")
+            extra_orders = json.loads(self.request.META.get("HTTP_SET_ORDERS", "{}"))
             data = [{"us_id": obj.id, "order": getattr(obj, order_attr)}]
             for id, order in extra_orders.items():
                 data.append({"us_id": id, "order": order})
 
-            order_updated = services.update_userstories_order_in_bulk(data,
-                                                                      order_attr,
-                                                                      project,
-                                                                      status=status,
-                                                                      milestone=milestone)
-            self.headers["Taiga-Info-Order-Updated"].update(json.dumps(order_updated))
+            return services.update_userstories_order_in_bulk(data,
+                                                             order_attr,
+                                                             project,
+                                                             status=status,
+                                                             milestone=milestone)
+
+        return {}
 
     def post_save(self, obj, created=False):
         if not created:
-            self.headers["Taiga-Info-Order-Updated"] = {}
-            self._reorder_if_needed(obj,
-                                    self._old_backlog_order_key,
-                                    self._backlog_order_key(obj),
-                                    "backlog_order",
-                                    obj.project)
-            self._reorder_if_needed(obj,
-                                    self._old_kanban_order_key,
-                                    self._kanban_order_key(obj),
-                                    "kanban_order",
-                                    obj.project,
-                                    status=obj.status)
-            self._reorder_if_needed(obj,
-                                    self._old_sprint_order_key,
-                                    self._sprint_order_key(obj),
-                                    "sprint_order",
-                                    obj.project,
-                                    milestone=obj.milestone)
+            orders_updated = {}
+            updated = self._reorder_if_needed(obj,
+                                              self._old_backlog_order_key,
+                                              self._backlog_order_key(obj),
+                                              "backlog_order",
+                                              obj.project)
+            orders_updated.update(updated)
+            updated = self._reorder_if_needed(obj,
+                                              self._old_kanban_order_key,
+                                              self._kanban_order_key(obj),
+                                              "kanban_order",
+                                              obj.project,
+                                              status=obj.status)
+            orders_updated.update(updated)
+            updated = self._reorder_if_needed(obj,
+                                              self._old_sprint_order_key,
+                                              self._sprint_order_key(obj),
+                                              "sprint_order",
+                                              obj.project,
+                                              milestone=obj.milestone)
+            orders_updated.update(updated)
+            self.headers["Taiga-Info-Order-Updated"] = json.dumps(orders_updated)
 
         # Code related to the hack of pre_save method.
         # Rather, this is the continuation of it.
