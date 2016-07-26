@@ -70,7 +70,7 @@ def update_projects_order_in_bulk(bulk_data: list, field: str, user):
 
     [{'project_id': <value>, 'order': <value>}, ...]
     """
-    memberships_orders = {m.id: getattr(m, field) for m in user.memberships.only("id", field)}
+    memberships_orders = {m.id: getattr(m, field) for m in user.memberships.all()}
     new_memberships_orders = {}
 
     for membership_data in bulk_data:
@@ -81,14 +81,8 @@ def update_projects_order_in_bulk(bulk_data: list, field: str, user):
 
     apply_order_updates(memberships_orders, new_memberships_orders)
 
-    membership_ids = []
-    new_order_values = []
-    for membership_id in memberships_orders:
-        membership_ids.append(membership_id)
-        new_order_values.append({field: memberships_orders[membership_id]})
-
     from taiga.base.utils import db
-    db.update_in_bulk_with_ids(membership_ids, new_order_values, model=models.Membership)
+    db.update_attr_in_bulk_for_ids(memberships_orders, field, model=models.Membership)
 
 
 @transaction.atomic

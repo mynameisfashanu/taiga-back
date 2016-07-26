@@ -85,60 +85,37 @@ def update_userstories_order_in_bulk(bulk_data: list, field: str, project: objec
 
     [{'us_id': <value>, 'order': <value>}, ...]
     """
-    user_stories = project.user_stories
+    user_stories = project.user_stories.all()
     if status is not None:
         user_stories = user_stories.filter(status=status)
     if milestone is not None:
         user_stories = user_stories.filter(milestone=milestone)
 
-    us_orders = {us.id: getattr(us, field) for us in user_stories.only("id", field)}
+    us_orders = {us.id: getattr(us, field) for us in user_stories}
     new_us_orders = {e["us_id"]: e["order"] for e in bulk_data}
     apply_order_updates(us_orders, new_us_orders)
-
-    """
-    user_story_ids = []
-    new_order_values = []
-    for us_id in us_orders:
-        user_story_ids.append(us_id)
-        new_order_values.append({field: us_orders[us_id]})
-    """
 
     user_story_ids = us_orders.keys()
     events.emit_event_for_ids(ids=user_story_ids,
                               content_type="userstories.userstory",
                               projectid=project.pk)
-    # db.update_in_bulk_with_ids(user_story_ids, new_order_values, model=models.UserStory)
-
-    # TODO:
-    values = [str((id, order)) for id, order in us_orders.items()]
-    sql = """
-    UPDATE userstories_userstory
-    SET backlog_order=update_orders.column2
-    FROM (
-      VALUES
-        {}
-    ) AS update_orders
-    WHERE userstories_userstory.id=update_orders.column1;
-    """.format(', '.join(values))
-
-    from django.db import connection
-    cursor = connection.cursor()
-    cursor.execute(sql)
+    db.update_attr_in_bulk_for_ids(us_orders, field, models.UserStory)
     return us_orders
+
 
 def update_userstories_milestone_in_bulk(bulk_data: list, milestone: object):
     """
     Update the milestone of some user stories.
     `bulk_data` should be a list of user story ids:
     """
-    user_story_ids = [us_data["us_id"] for us_data in bulk_data]
-    new_milestone_values = [{"milestone": milestone.id}] * len(user_story_ids)
+    us_milestones = {e["us_id"]: milestone.id for e in bulk_data}
+    user_story_ids = us_milestones.keys()
 
     events.emit_event_for_ids(ids=user_story_ids,
                               content_type="userstories.userstory",
                               projectid=milestone.project.pk)
 
-    db.update_in_bulk_with_ids(user_story_ids, new_milestone_values, model=models.UserStory)
+    db.update_attr_in_bulk_for_ids(us_milestones, "milestone", model=models.UserStory)
 
 
 def snapshot_userstories_in_bulk(bulk_data, user):

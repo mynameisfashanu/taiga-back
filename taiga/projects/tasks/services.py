@@ -82,7 +82,7 @@ def update_tasks_order_in_bulk(bulk_data: list, field: str, project: object,
 
     [{'task_id': <value>, 'order': <value>}, ...]
     """
-    tasks = project.tasks
+    tasks = project.tasks.all()
     if user_story is not None:
         tasks = tasks.filter(user_story=user_story)
     if status is not None:
@@ -90,22 +90,18 @@ def update_tasks_order_in_bulk(bulk_data: list, field: str, project: object,
     if milestone is not None:
         tasks = tasks.filter(milestone=milestone)
 
-    task_orders = {task.id: getattr(task, field) for task in tasks.only("id", field)}
+    task_orders = {task.id: getattr(task, field) for task in tasks}
     new_task_orders = {e["task_id"]: e["order"] for e in bulk_data}
     apply_order_updates(task_orders, new_task_orders)
 
-    task_ids = []
-    new_order_values = []
-    for task_id in task_orders:
-        task_ids.append(task_id)
-        new_order_values.append({field: task_orders[task_id]})
-
+    task_ids = task_orders.keys()
     events.emit_event_for_ids(ids=task_ids,
                               content_type="tasks.task",
                               projectid=project.pk)
 
-    db.update_in_bulk_with_ids(task_ids, new_order_values, model=models.Task)
+    db.update_attr_in_bulk_for_ids(task_orders, field, models.Task)
     return task_orders
+
 
 def snapshot_tasks_in_bulk(bulk_data, user):
     for task_data in bulk_data:

@@ -365,7 +365,6 @@ class UserStoryViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixi
                                                         project,
                                                         status=status,
                                                         milestone=milestone)
-        services.snapshot_userstories_in_bulk(data["bulk_stories"], request.user)
         return response.Ok(ret)
 
     @list_route(methods=["POST"])

@@ -293,8 +293,6 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
                                                   user_story=user_story,
                                                   status=status,
                                                   milestone=milestone)
-        services.snapshot_tasks_in_bulk(data["bulk_tasks"], request.user)
-
         return response.Ok(ret)
 
     @list_route(methods=["POST"])
