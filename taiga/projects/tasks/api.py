@@ -137,7 +137,7 @@ class TaskViewSet(OCCResourceMixin, VotedResourceMixin, HistoryResourceMixin,
             extra_orders = json.loads(self.request.META.get("HTTP_SET_ORDERS", "{}"))
             data = [{"task_id": obj.id, "order": getattr(obj, order_attr)}]
             for id, order in extra_orders.items():
-                data.append({"us_id": id, "order": order})
+                data.append({"task_id": int(id), "order": order})
 
             return services.update_tasks_order_in_bulk(data,
                                                        order_attr,
